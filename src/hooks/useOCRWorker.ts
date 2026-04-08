@@ -37,12 +37,34 @@ export function useOCRWorker() {
     )
     ocrWorkerRef.current = worker
 
+    // 初期化中のプログレスメッセージを受け取るリスナー
+    const handleInitMessage = (event: MessageEvent<WorkerOutMessage>) => {
+      const msg = event.data
+      if (msg.type === 'OCR_PROGRESS' && msg.stage === 'init') {
+        if (msg.modelProgress) {
+          setJobState(prev => ({
+            ...prev,
+            modelProgress: msg.modelProgress!,
+          }))
+        }
+        if (msg.progress >= 1.0) {
+          setJobState(prev => ({ ...prev, status: 'idle' }))
+          worker.removeEventListener('message', handleInitMessage)
+        }
+      } else if (msg.type === 'OCR_ERROR' && msg.stage === 'init') {
+        setJobState(prev => ({ ...prev, status: 'error', error: msg.error }))
+        worker.removeEventListener('message', handleInitMessage)
+      }
+    }
+    worker.addEventListener('message', handleInitMessage)
+
     // モバイルは INITIALIZE のみ（モデルロードは後回し）
     worker.postMessage({ type: 'INITIALIZE', layoutOnly: isMobile })
 
     setJobState(prev => ({ ...prev, status: 'loading_model' }))
 
     return () => {
+      worker.removeEventListener('message', handleInitMessage)
       worker.postMessage({ type: 'TERMINATE' })
       worker.terminate()
       ocrWorkerRef.current = null
