@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# ONNX model files (large binaries - download via npm run setup)
+public/models/*.onnx
+
+# Config downloaded at setup
+public/config/NDLmoji.yaml
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TypeScript cache
+*.tsbuildinfo
+node_modules/.tmp/
