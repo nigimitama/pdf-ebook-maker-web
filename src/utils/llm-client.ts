@@ -30,6 +30,21 @@ export interface LLMRequestOptions {
   signal?: AbortSignal
 }
 
+/**
+ * COEP 環境下での cross-origin fetch ラッパー
+ * Vite dev サーバーの /api/llm-proxy 経由でリクエストを転送する。
+ */
+function llmFetch(fullUrl: string, init?: RequestInit): Promise<Response> {
+  const url = new URL(fullUrl)
+  return fetch(`/api/llm-proxy${url.pathname}${url.search}`, {
+    ...init,
+    headers: {
+      ...(init?.headers as Record<string, string>),
+      'x-llm-target': url.origin,
+    },
+  })
+}
+
 const DEFAULT_MODELS: Record<LLMProvider, string> = {
   openai: 'gpt-4o-mini',
   anthropic: 'claude-haiku-4-5-20251001',
@@ -99,7 +114,7 @@ async function callOpenAICompatible(
     temperature: 0.1,
   }
 
-  const res = await fetch(`${baseUrl}/chat/completions`, {
+  const res = await llmFetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
@@ -170,7 +185,7 @@ async function callAnthropic(
     stream: useStream,
   }
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await llmFetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -234,7 +249,7 @@ async function callOllama(
   settings: LLMSettings,
   options?: LLMRequestOptions
 ): Promise<string> {
-  const baseUrl = settings.baseUrl || 'http://localhost:11434'
+  const baseUrl = (settings.baseUrl || 'http://localhost:11434').replace(/\/$/, '')
   const model = settings.model || getDefaultModel('ollama')
   const useStream = !!options?.onChunk
 
@@ -248,7 +263,7 @@ async function callOllama(
     options: { temperature: 0.1 },
   }
 
-  const res = await fetch(`${baseUrl}/api/chat`, {
+  const res = await llmFetch(`${baseUrl}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
