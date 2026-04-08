@@ -50,6 +50,7 @@ export default function App() {
 
   const hasLLMSettings = !!(
     (llmSettings.provider === 'ollama' && llmSettings.baseUrl) ||
+    (llmSettings.provider === 'bonsai' && llmSettings.baseUrl) ||
     (llmSettings.provider === 'openai' && llmSettings.apiKey) ||
     (llmSettings.provider === 'anthropic' && llmSettings.apiKey) ||
     (llmSettings.provider === 'custom' && llmSettings.baseUrl)

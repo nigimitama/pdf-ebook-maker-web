@@ -5,10 +5,11 @@
  *   - OpenAI API (GPT-4o-mini など)
  *   - Anthropic API (Claude Haiku など)
  *   - Ollama (ローカルCPU LLM: localhost:11434)
+ *   - Bonsai (1-bit 8B / mlx_lm.server: localhost:8080)
  *   - カスタム OpenAI 互換エンドポイント (LM Studio など)
  *
  * ブラウザから直接 API を呼び出す。
- * Ollama / LM Studio はローカルで動くため API キー不要。
+ * Ollama / Bonsai / LM Studio はローカルで動くため API キー不要。
  */
 
 import type { LLMSettings, LLMProvider } from '../types/ocr'
@@ -33,6 +34,7 @@ const DEFAULT_MODELS: Record<LLMProvider, string> = {
   openai: 'gpt-4o-mini',
   anthropic: 'claude-haiku-4-5-20251001',
   ollama: 'qwen2.5:1.5b',
+  bonsai: 'prism-ml/Bonsai-8B-mlx-1bit',
   custom: 'gpt-4o-mini',
 }
 
@@ -53,6 +55,7 @@ export async function correctText(
 
   switch (settings.provider) {
     case 'openai':
+    case 'bonsai':
     case 'custom':
       return callOpenAICompatible(userMessage, settings, options)
     case 'anthropic':
@@ -73,7 +76,9 @@ async function callOpenAICompatible(
 ): Promise<string> {
   const baseUrl = settings.provider === 'openai'
     ? 'https://api.openai.com/v1'
-    : settings.baseUrl.replace(/\/$/, '')
+    : settings.provider === 'bonsai'
+      ? (settings.baseUrl || 'http://localhost:8080').replace(/\/$/, '')
+      : settings.baseUrl.replace(/\/$/, '')
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',

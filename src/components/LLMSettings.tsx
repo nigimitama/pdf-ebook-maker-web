@@ -12,6 +12,7 @@ const PROVIDER_LABELS: Record<LLMProvider, string> = {
   openai: 'OpenAI API',
   anthropic: 'Anthropic API (Claude)',
   ollama: 'Ollama (ローカル)',
+  bonsai: 'Bonsai 8B 1-bit (ローカル・高速)',
   custom: 'カスタム（OpenAI互換）',
 }
 
@@ -19,6 +20,7 @@ const PROVIDER_MODELS: Record<LLMProvider, string[]> = {
   openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo'],
   anthropic: ['claude-haiku-4-5-20251001', 'claude-sonnet-4-6', 'claude-opus-4-6'],
   ollama: ['qwen2.5:1.5b', 'qwen2.5:3b', 'llama3.2:3b', 'gemma2:2b', 'phi3.5:mini'],
+  bonsai: ['prism-ml/Bonsai-8B-mlx-1bit'],
   custom: [],
 }
 
@@ -33,7 +35,11 @@ export function LLMSettingsModal({ settings, onSave, onClose }: LLMSettingsModal
     update({
       provider,
       model: getDefaultModel(provider),
-      baseUrl: provider === 'ollama' ? 'http://localhost:11434' : '',
+      baseUrl: provider === 'ollama'
+        ? 'http://localhost:11434'
+        : provider === 'bonsai'
+          ? 'http://localhost:8080'
+          : '',
     })
     setTestResult(null)
   }
@@ -75,6 +81,34 @@ export function LLMSettingsModal({ settings, onSave, onClose }: LLMSettingsModal
               ))}
             </div>
           </div>
+
+          {/* Bonsai セットアップ手順 */}
+          {draft.provider === 'bonsai' && (
+            <div className="form-group">
+              <label>エンドポイント URL</label>
+              <div className="bonsai-setup">
+                <p className="form-hint bonsai-badge">
+                  ⚡ <strong>Bonsai 8B 1-bit</strong> — 1.15 GB・131 tok/s (M4 Pro)・フル精度8Bと同等の品質
+                </p>
+                <p className="form-hint">Apple Silicon (Mac) での起動方法：</p>
+                <pre className="code-block">{`pip install mlx-lm
+mlx_lm.server \\
+  --model prism-ml/Bonsai-8B-mlx-1bit \\
+  --port 8080`}</pre>
+                <p className="form-hint" style={{ marginTop: 6 }}>
+                  または公式デモ（llama.cpp版）：<br />
+                  <code>git clone https://github.com/PrismML-Eng/Bonsai-demo</code><br />
+                  <code>cd Bonsai-demo && ./setup.sh && ./run.sh</code>
+                </p>
+              </div>
+              <input
+                type="text"
+                value={draft.baseUrl}
+                onChange={(e) => update({ baseUrl: e.target.value })}
+                placeholder="http://localhost:8080"
+              />
+            </div>
+          )}
 
           {/* Ollama / カスタムエンドポイント URL */}
           {(draft.provider === 'ollama' || draft.provider === 'custom') && (

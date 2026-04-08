@@ -70,7 +70,7 @@ export interface OCRJobState {
 }
 
 /** LLMプロバイダーの種類 */
-export type LLMProvider = 'openai' | 'anthropic' | 'ollama' | 'custom'
+export type LLMProvider = 'openai' | 'anthropic' | 'ollama' | 'bonsai' | 'custom'
 
 export interface LLMSettings {
   provider: LLMProvider
